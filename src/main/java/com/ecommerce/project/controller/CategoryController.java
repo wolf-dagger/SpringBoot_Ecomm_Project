@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 
@@ -36,26 +35,17 @@ public class CategoryController {
     @DeleteMapping("/admin/categories/{categoryId}")
     public ResponseEntity deleteCategory(@PathVariable Long categoryId) {
 
-        try {
-
         String status = categoryService.deleteCategory(categoryId);
         return new ResponseEntity<>(status, HttpStatus.OK);
 
-        } catch (ResponseStatusException ex){
-            return new ResponseEntity<>(ex.getReason(),ex.getStatusCode());
-        }
     }
 
     @PutMapping("/admin/categories/{categoryId}")
-    public ResponseEntity<String> updateCategory(@RequestBody Category category, @PathVariable Long categoryId) {
-        try {
+    public ResponseEntity<String> updateCategory(@Valid @RequestBody Category category, @PathVariable Long categoryId) {
 
             Category savedCategory = categoryService.updateCategory(category,categoryId);
             return new ResponseEntity<>("Category with category id : " + categoryId + " is Updated...", HttpStatus.OK);
 
-        } catch (ResponseStatusException ex){
-            return new ResponseEntity<>(ex.getReason(),ex.getStatusCode());
-        }
     }
 
 }

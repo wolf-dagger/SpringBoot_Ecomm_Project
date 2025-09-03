@@ -1,5 +1,6 @@
 package com.ecommerce.project.service;
 
+import com.ecommerce.project.exceptions.APIException;
 import com.ecommerce.project.exceptions.ResourceNotFoundException;
 import com.ecommerce.project.model.Category;
 import com.ecommerce.project.model.Product;
@@ -37,31 +38,55 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public ProductDTO addProduct(Long categoryId, ProductDTO productDTO) {
 
+        // check if product already present or not
+
+
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(()-> new ResourceNotFoundException("Category","categoryId",categoryId));
 
-        Product product = modelMapper.map(productDTO, Product.class);
+        boolean isProductNotPresent = true;
 
-        product.setImage("default.png");
+        List<Product> products = category.getProducts();
+        for (Product value : products) {
+            if (value.getProductName().equals(productDTO.getProductName())) {
+                isProductNotPresent = false;
+                break;
+            }
+        }
 
-        product.setCategory(category);
+        if (isProductNotPresent) {
 
-        double specialPrice = product.getPrice() - ((product.getDiscount() * 0.01) * product.getSpecialPrice());
-        product.setSpecialPrice(specialPrice);
+            Product product = modelMapper.map(productDTO, Product.class);
 
-        Product savedProduct = productRepository.save(product);
+            product.setImage("default.png");
 
-        return modelMapper.map(savedProduct, ProductDTO.class);
+            product.setCategory(category);
+
+            double specialPrice = product.getPrice() - ((product.getDiscount() * 0.01) * product.getSpecialPrice());
+            product.setSpecialPrice(specialPrice);
+
+            Product savedProduct = productRepository.save(product);
+
+            return modelMapper.map(savedProduct, ProductDTO.class);
+        } else {
+            throw new APIException("Product Already Exists!!");
+        }
     }
 
     @Override
     public ProductResponse getAllProducts() {
+
+        // check if product size is 0
 
 //        converting products to product response
         List<Product> products = productRepository.findAll();
         List<ProductDTO> productDTOS = products.stream()
                 .map(product -> modelMapper.map(product, ProductDTO.class))
                 .toList();
+
+        if (products.isEmpty()) {
+            throw new APIException("No Product exists!!");
+        }
 
         ProductResponse productResponse = new ProductResponse();
         productResponse.setContent(productDTOS);
@@ -104,6 +129,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO updateProduct(Long productId, ProductDTO productDTO) {
+
         // Get the product from database
         Product productFromDb = productRepository.findById(productId).
                                 orElseThrow(()-> new ResourceNotFoundException("Product","productId",productId));
